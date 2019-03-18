@@ -173,6 +173,7 @@ static void clearDevices(QzHardware_T *qat_hw)
     }
 }
 
+/*
 static void dcCallback(void *cbtag, CpaStatus stat)
 {
     long tag, i, j;
@@ -205,7 +206,7 @@ print_err:
 done:
     return;
 }
-
+*/
 static int qzGrabInstance(int hint)
 {
     int i, rc;
@@ -938,7 +939,8 @@ int qzSetupHW(QzSession_T *sess, int i)
                              g_process.qz_inst[i].cpaSess,
                              &qz_sess->session_setup_data,
                              NULL,
-                             dcCallback);
+			     NULL);
+                             //dcCallback);
         if (qz_sess->sess_status != CPA_STATUS_SUCCESS) {
             rc = QZ_FAIL;
         }
@@ -957,7 +959,7 @@ done_sess:
  */
 static void *doCompressIn(void *in)
 {
-    unsigned long tag;
+   // unsigned long tag;
     int i, j;
     unsigned int done = 0;
     unsigned int remaining;
@@ -1046,17 +1048,20 @@ static void *doCompressIn(void *in)
 
         g_process.qz_inst[i].stream[j].res.checksum = 0;
         do {
-            tag = (i << 16) | j;
-            QZ_DEBUG("Comp Sending %u bytes ,opData.flushFlag = %d, i = %ld j = %d seq = %ld tag = %ld\n",
+            //tag = (i << 16) | j;
+            //QZ_DEBUG("Comp Sending %u bytes ,opData.flushFlag = %d, i = %ld j = %d seq = %ld tag = %ld\n",
+            QZ_DEBUG("Comp Sending %u bytes ,opData.flushFlag = %d, i = %ld j = %d seq = %ld \n",
                      g_process.qz_inst[i].src_buffers[j]->pBuffers->dataLenInBytes, opData.flushFlag,
-                     i, j, g_process.qz_inst[i].stream[j].seq, tag);
+                     i, j, g_process.qz_inst[i].stream[j].seq);
+                     //i, j, g_process.qz_inst[i].stream[j].seq, tag);
             rc = cpaDcCompressData2(g_process.dc_inst_handle[i],
                                     g_process.qz_inst[i].cpaSess,
                                     g_process.qz_inst[i].src_buffers[j],
                                     g_process.qz_inst[i].dest_buffers[j],
                                     &opData,
                                     &g_process.qz_inst[i].stream[j].res,
-                                    (void *)(tag));
+                                    (void *)NULL);
+                                    //(void *)(tag));
             if (CPA_STATUS_RETRY == rc) {
                 g_process.qz_inst[i].num_retries++;
                 usleep(qz_sess->sess_params.poll_sleep);
@@ -1072,7 +1077,10 @@ static void *doCompressIn(void *in)
         if (CPA_STATUS_SUCCESS != rc) {
             QZ_ERROR("Error in cpaDcCompressData: %d\n", rc);
             goto err_exit;
-        }
+        } else {
+            g_process.qz_inst[i].stream[j].sink1++;
+            g_process.qz_inst[i].stream[j].job_status = rc;
+	}
 
         QZ_DEBUG("remaining = %u, src_send_sz = %u, seq = %ld\n", remaining,
                  src_send_sz,  qz_sess->seq);
@@ -1659,7 +1667,8 @@ static int checkHeader(QzSess_T *qz_sess, unsigned char *src,
  */
 static void *doDecompressIn(void *in)
 {
-    unsigned long i, tag;
+    unsigned long i;
+    //unsigned long tag;
     int rc;
     int j;
     unsigned int done = 0;
@@ -1803,9 +1812,11 @@ static void *doDecompressIn(void *in)
 
             g_process.qz_inst[i].stream[j].res.checksum = 0;
             do {
-                tag = (i << 16) | j;
-                QZ_DEBUG("Decomp Sending i = %ld j = %d seq = %ld tag = %ld\n",
-                         i, j, g_process.qz_inst[i].stream[j].seq, tag);
+                //tag = (i << 16) | j;
+                //QZ_DEBUG("Decomp Sending i = %ld j = %d seq = %ld tag = %ld\n",
+                //         i, j, g_process.qz_inst[i].stream[j].seq, tag);
+                QZ_DEBUG("Decomp Sending i = %ld j = %d seq = %ld\n",
+                         i, j, g_process.qz_inst[i].stream[j].seq);
 
                 rc = cpaDcDecompressData(g_process.dc_inst_handle[i],
                                          g_process.qz_inst[i].cpaSess,
@@ -1813,7 +1824,8 @@ static void *doDecompressIn(void *in)
                                          g_process.qz_inst[i].dest_buffers[j],
                                          &g_process.qz_inst[i].stream[j].res,
                                          CPA_DC_FLUSH_FINAL,
-                                         (void *)(tag));
+                                         (void *)NULL);
+                                        // (void *)(tag));
                 QZ_DEBUG("mw>> %s():  DcDecompressData() rc = %d\n", __func__, rc);
                 if (CPA_STATUS_RETRY == rc) {
                     g_process.qz_inst[i].num_retries++;
@@ -1828,8 +1840,11 @@ static void *doDecompressIn(void *in)
             } while (rc == CPA_STATUS_RETRY);
 
             if (CPA_STATUS_SUCCESS != rc) {
-                QZ_ERROR("Error in cpaDcCompressData: %d\n", rc);
+                QZ_ERROR("Error in cpaDcDecompressData: %d\n", rc);
                 goto err_exit;
+            } else { 
+                g_process.qz_inst[i].stream[j].sink1++;
+                g_process.qz_inst[i].stream[j].job_status = rc;
             }
 
             g_process.qz_inst[i].num_retries = 0;
