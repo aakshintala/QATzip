@@ -37,6 +37,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <assert.h>
 
 #include "cpa.h"
 #include "cpa_dc.h"
@@ -183,6 +184,8 @@ void *qzMalloc(size_t sz, int numa, int pinned)
         if (0 == pinned) {
             QZ_DEBUG("regular malloc\n");
             g_a = malloc(sz);
+        } else {
+            assert(0 && "qaeMemAllocNUMA failed to allocate the requested memory");
         }
     } else {
         qzMemRegAddr(g_a);
