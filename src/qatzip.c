@@ -1019,8 +1019,8 @@ static void *doCompressIn(void *in)
         g_process.qz_inst[i].stream[j].src2++; /*this buffer is in use*/
         /*set up src dest buffers*/
         g_process.qz_inst[i].src_buffers[j]->pBuffers->dataLenInBytes = src_send_sz;
-        g_process.qz_inst[i].dest_buffers[j]->pBuffers->dataLenInBytes
-            = *(qz_sess->dest_sz);
+        //g_process.qz_inst[i].dest_buffers[j]->pBuffers->dataLenInBytes
+          //  = *(qz_sess->dest_sz);
 
         if (0 == src_pinned) {
             QZ_DEBUG("memory copy in doCompressIn\n");
@@ -1164,7 +1164,7 @@ static void *doCompressOut(void *in)
 
                 good = 1;
                 QZ_DEBUG("doCompressOut: Processing seqnumber %2.2d "
-                         "%2.2d %4.4ld, PID: %p, TID: %p\n",
+                         "%2.2d %4.4ld, PID: %d, TID: %d\n",
                          i, j, g_process.qz_inst[i].stream[j].seq,
                          getpid(), pthread_self());
 
