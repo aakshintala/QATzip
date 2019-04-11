@@ -192,7 +192,8 @@ static int doProcessBuffer(QzSession_T *sess,
     int ret = QZ_FAIL;
     unsigned int done = 0;
     unsigned int buf_processed = 0;
-    unsigned int buf_remaining = *src_len;
+    int buf_remaining = *src_len;
+    //unsigned int buf_remaining = *src_len;
     unsigned int bytes_written = 0;
     unsigned int valid_dst_buf_len = dst_len;
     RunTimeList_T *time_node = time_list;
@@ -239,7 +240,7 @@ static int doProcessBuffer(QzSession_T *sess,
 
         buf_processed += *src_len;
         buf_remaining -= *src_len;
-        if (0 == buf_remaining) {
+        if (0 >= buf_remaining ) {
             done = 1;
         }
         src += *src_len;
